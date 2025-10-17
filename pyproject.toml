@@ -20,6 +20,7 @@ classifiers = [
 
 dependencies = [
     "openai",
+    "python-dotenv",
     "pyyaml",
 ]
 
