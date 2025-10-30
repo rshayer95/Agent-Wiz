@@ -1,4 +1,6 @@
 import argparse
+import os  
+import sys 
 from .frameworks import agent_chat, autogen, crewai, google_adk, langgraph, llama_index, n8n, openai_agents, pydantic, swarm
 from .analyzers import generate_maestro_analysis_report
 from .visualizers.visualizer import generate_visualization
@@ -32,6 +34,18 @@ def main():
 
     match args.command:
         case "extract":
+            
+            
+            if not os.path.exists(args.directory):
+                print(f"Error: The specified directory '{args.directory}' does not exist.")
+                sys.exit(1)  
+            if not os.path.isdir(args.directory):
+                print(f"Error: The specified path '{args.directory}' is not a directory.")
+                sys.exit(1)
+            if not os.access(args.directory, os.R_OK):
+                print(f"Error: You do not have permission to access the directory '{args.directory}'.")
+                sys.exit(1)
+
             match args.framework:
                 case "agent_chat":
                     agent_chat.extract_agentchat_graph(args.directory, args.output)
