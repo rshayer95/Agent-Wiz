@@ -1,41 +1,41 @@
 import argparse
+from tqdm import tqdm
 import time
 import threading
-import sys
 from .frameworks import agent_chat, autogen, crewai, google_adk, langgraph, llama_index, n8n, openai_agents, pydantic, swarm
 from .analyzers import generate_maestro_analysis_report
 from .visualizers.visualizer import generate_visualization
 
 
 def run_with_timer(task_fn, *args, label="Working", **kwargs):
-    """
-    Runs the given function while showing a live-updating timer with a custom label.
-
-    Parameters:
-        task_fn (callable): The function to run.
-        label (str): The message shown while the task is running.
-        *args, **kwargs: Arguments to pass to the function.
-    """
     stop_event = threading.Event()
-    start_time = time.time()
+    total = 100
+    pbar = tqdm(total=total, desc=f"⏳ {label}",
+                bar_format="{desc} |{bar}| {percentage:3.0f}% | {elapsed}s")
 
-    def show_timer():
+    def animate():
         while not stop_event.is_set():
-            elapsed = time.time() - start_time
-            sys.stdout.write(f"\r⏳ {label}... Elapsed time: {elapsed:.1f}s")
-            sys.stdout.flush()
+            if pbar.n < total:
+                pbar.update(1)
+            else:
+                pbar.n = 0
+                pbar.refresh()
             time.sleep(0.1)
 
-    timer_thread = threading.Thread(target=show_timer)
-    timer_thread.start()
+    t = threading.Thread(target=animate)
+    t.start()
 
     try:
-        task_fn(*args, **kwargs)
+        result = task_fn(*args, **kwargs)
     finally:
         stop_event.set()
-        timer_thread.join()
-        total_elapsed = time.time() - start_time
-        print(f"\r✅ {label} completed in {total_elapsed:.1f}s")
+        t.join()
+        pbar.n = total
+        pbar.refresh()
+        pbar.close()
+        elapsed = time.time() - (time.time() - pbar.last_print_t)
+        print(f"✅ {label} completed in {elapsed:.1f}s")
+    return result
 
 
 def main():
